@@ -60,9 +60,9 @@ export const loginUser: RequestHandler = async (req, res) => {
     if (!parseResult.success)
       return res.status(400).json({ error: parseResult.error.issues });
 
-    const { reg_no, password, secret_code } = parseResult.data;
+    const { reg_no, password } = parseResult.data;
 
-    const user = await loginUserService(reg_no, password, secret_code);
+    const user = await loginUserService(reg_no, password);
 
     // Create JWT token for client
     const payload = {
@@ -71,30 +71,19 @@ export const loginUser: RequestHandler = async (req, res) => {
       id: user.id,
       role: user.role,
     };
-
     const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "24h" });
 
-    // Check if secret code is set
     if (!user.has_secret_code) {
+      // First login: prompt user to create secret code
       return res.status(200).json({
-        message: "First login detected. You must set a secret code.",
-        token,                // <-- JWT token included
+        message: "First login detected. Please create your secret code.",
+        token,               // JWT returned so client can call /set-secret-code
         user: payload,
         requireSecretCode: true,
       });
     }
 
-    // Secret code exists, but client might not have provided it
-    if (user.has_secret_code && !secret_code) {
-      return res.status(200).json({
-        message: "Secret code required for login.",
-        token: null,
-        user: payload,
-        requireSecretCode: true,
-      });
-    }
-
-    // Secret code provided and valid, full login successful
+    // Normal login
     res.status(200).json({
       message: "Login successful",
       token,
@@ -105,6 +94,7 @@ export const loginUser: RequestHandler = async (req, res) => {
     res.status(401).json({ error: error.message });
   }
 };
+
 
 
 

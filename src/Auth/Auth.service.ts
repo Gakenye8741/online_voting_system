@@ -32,12 +32,11 @@ export const registerUserService = async (
 };
 
 // ================================
-// Login service WITH secret code enforcement
+// Login service (first-login allows secret code creation)
 // ================================
 export const loginUserService = async (
   reg_no: string,
-  password: string,
-  secret_code?: string
+  password: string
 ): Promise<UserSelect> => {
   const user = await db.query.users.findFirst({
     where: eq(users.reg_no, reg_no),
@@ -49,17 +48,11 @@ export const loginUserService = async (
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid password");
 
-  // Enforce secret code only if it exists
-  if (user.has_secret_code) {
-    if (!secret_code) throw new Error("Secret code required");
-    const validSecret = await bcrypt.compare(secret_code, user.secret_code_hash!);
-    if (!validSecret) throw new Error("Invalid secret code");
-  }
+  // If secret code exists, enforce it later when voting (not here)
+  // First login: allow without secret code
 
-  // If secret code not set yet, user can login normally
   return user;
 };
-
 
 // ================================
 // Create secret code
@@ -126,7 +119,7 @@ export const updateUserPasswordService = async (
   reg_no: string,
   newPassword: string
 ): Promise<string> => {
-  const hashedPassword = await bcrypt.hash(newPassword, 10); // hash here
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   const [updated] = await db.update(users)
     .set({ password: hashedPassword })
@@ -137,4 +130,3 @@ export const updateUserPasswordService = async (
 
   return "Password updated successfully";
 };
-
