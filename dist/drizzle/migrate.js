@@ -1,8 +1,7 @@
+"use strict";
 // import "dotenv/config"
 // import { migrate } from "drizzle-orm/node-postgres/migrator"
 // import db from "./db"
-
-
 // // Creating our migrations
 // async function migration(){
 //     console.log("-----Migration Started SuccessFully!------");
@@ -11,6 +10,5 @@
 //     console.log("-----Migration ended SuccessFully!-------");
 //     process.exit(0);
 // }
-
 // // Catch Errors
 // migration().catch()
