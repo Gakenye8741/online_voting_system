@@ -25,7 +25,7 @@ export const registerUserValidator = z.object({
       /^[a-zA-Z0-9\/]+$/,
       "Registration number can only contain letters, numbers, and slashes"
     ),
-  password: z.string().min(3, "Password must be at least 3 characters").trim(),
+  password: z.string().optional(), // <-- made optional
   role: z
     .enum(allowedRoles)
     .optional()
@@ -41,14 +41,16 @@ export const loginUserValidator = z.object({
     .string()
     .min(3, "Registration number must be at least 3 characters"),
   password: z.string().min(3, "Password must be at least 3 characters"),
+  secret_code: z.string().optional(), // <-- add this line
 });
+
 
 /* ================================
    First-time Profile Completion Validator
    Students update name, school, and expected graduation
 ================================ */
 export const completeProfileValidator = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().min(3),
   school: z.enum([
     "Science",
     "Education",
@@ -56,14 +58,13 @@ export const completeProfileValidator = z.object({
     "Humanities and Developmental_Studies",
     "TVET",
   ]),
-//   graduationStatus: z.enum([
-//     "active","graduated","deffered","inactive"
-//   ]),
   expected_graduation: z
     .string()
-    .regex(/^(0[1-9]|1[0-2])\/\d{4}$/, "Expected graduation must be in MM/YYYY format"),
-    
+    .regex(/^(0[1-9]|1[0-2])\/\d{4}$/),
+
+  email: z.string().email("Invalid email"),   // ✔ Added
 });
+
 
 /* ================================
    Password Update Validator

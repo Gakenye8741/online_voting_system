@@ -10,8 +10,9 @@
     "gen": "drizzle-kit generate",
     "migrate": "tsx src/drizzle/migrate.ts",
     "studio": "drizzle-kit studio",
-    "push": "drizzle-kit generate && tsx src/drizzle/migrate.ts && tsx src/drizzle/seed.ts",
-    "seed": "tsx src/drizzle/seed.ts"
+    "push": "drizzle-kit generate && drizzle-kit push",
+    "seed": "tsx src/drizzle/seed.ts",
+    "postinstall": "tsc"
   },
   "keywords": [],
   "author": "Gakenye Ndiritu  || Mwangaza || Enock ||  ",
@@ -26,6 +27,7 @@
     "dotenv": "^16.5.0",
     "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.43.1",
+    "ethers": "^6.15.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.2.1",

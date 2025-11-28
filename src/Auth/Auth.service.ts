@@ -1,16 +1,17 @@
 import db from "../drizzle/db";
 import { eq } from "drizzle-orm";
-import { userRole, users, UserSelect} from "../drizzle/schema";
+import { userRole, users, UserSelect } from "../drizzle/schema";
+import bcrypt from "bcrypt";
 
 // ================================
 // Register a new student (minimal)
 // ================================
 export const registerUserService = async (
   reg_no: string,
-  password: string, // already hashed in controller
-  role?: typeof userRole.enumValues[number] // optional role
+  password: string,
+  role?: typeof userRole.enumValues[number]
 ): Promise<UserSelect> => {
-  const newRole = role || "voter"; // default to voter if role is not provided
+  const newRole = role || "voter";
 
   const [newUser] = await db.insert(users)
     .values({
@@ -20,8 +21,8 @@ export const registerUserService = async (
       graduation_status: "active",
       has_secret_code: false,
       has_face_verification: false,
-      name: reg_no, // temporary placeholder
-      expected_graduation: "01/2099", // temporary placeholder
+      name: reg_no,
+      expected_graduation: "01/2099",
     })
     .returning();
 
@@ -31,35 +32,73 @@ export const registerUserService = async (
 };
 
 // ================================
-// Login service (reg_no + password)
+// Login service WITH secret code enforcement
 // ================================
 export const loginUserService = async (
   reg_no: string,
-  password: string
-): Promise<UserSelect| null> => {
+  password: string,
+  secret_code?: string
+): Promise<UserSelect> => {
   const user = await db.query.users.findFirst({
     where: eq(users.reg_no, reg_no),
   });
 
-  if (!user) return null;
+  if (!user) throw new Error("User not found");
 
+  // Check password
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) throw new Error("Invalid password");
+
+  // Enforce secret code only if it exists
+  if (user.has_secret_code) {
+    if (!secret_code) throw new Error("Secret code required");
+    const validSecret = await bcrypt.compare(secret_code, user.secret_code_hash!);
+    if (!validSecret) throw new Error("Invalid secret code");
+  }
+
+  // If secret code not set yet, user can login normally
   return user;
 };
 
+
 // ================================
-// Complete profile after first login
+// Create secret code
+// ================================
+export const createSecretCodeService = async (
+  reg_no: string,
+  secret_code: string
+): Promise<string> => {
+  const hashedCode = await bcrypt.hash(secret_code, 10);
+
+  const [updated] = await db.update(users)
+    .set({
+      secret_code_hash: hashedCode,
+      has_secret_code: true
+    })
+    .where(eq(users.reg_no, reg_no))
+    .returning();
+
+  if (!updated) throw new Error("Failed to set secret code");
+
+  return "Secret code created successfully";
+};
+
+// ================================
+// Complete profile
 // ================================
 export const completeStudentProfileService = async (
   reg_no: string,
   name: string,
   school: "Science" | "Education" | "Business" | "Humanities and Developmental_Studies" | "TVET",
   expected_graduation: string,
+  email: string
 ): Promise<UserSelect> => {
   const [updatedUser] = await db.update(users)
     .set({
       name,
       school,
       expected_graduation,
+      email,
     })
     .where(eq(users.reg_no, reg_no))
     .returning();
@@ -70,11 +109,11 @@ export const completeStudentProfileService = async (
 };
 
 // ================================
-// Get user by registration number
+// Get user by reg no
 // ================================
 export const getUserByRegNoService = async (
   reg_no: string
-): Promise<UserSelect| undefined> => {
+): Promise<UserSelect | undefined> => {
   return db.query.users.findFirst({
     where: eq(users.reg_no, reg_no),
   });
@@ -87,11 +126,15 @@ export const updateUserPasswordService = async (
   reg_no: string,
   newPassword: string
 ): Promise<string> => {
+  const hashedPassword = await bcrypt.hash(newPassword, 10); // hash here
+
   const [updated] = await db.update(users)
-    .set({ password: newPassword })
+    .set({ password: hashedPassword })
     .where(eq(users.reg_no, reg_no))
     .returning();
 
   if (!updated) throw new Error("User not found or password update failed");
+
   return "Password updated successfully";
 };
+

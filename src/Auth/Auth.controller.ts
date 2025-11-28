@@ -7,7 +7,9 @@ import {
   completeStudentProfileService,
   updateUserPasswordService,
   getUserByRegNoService,
+  createSecretCodeService,
 } from "./Auth.service";
+
 import {
   registerUserValidator,
   loginUserValidator,
@@ -16,41 +18,41 @@ import {
 } from "../validators/Auth.validator";
 
 // -------------------------------
-// Register a new student
+// Register
 // -------------------------------
 export const registerUser: RequestHandler = async (req, res) => {
   try {
-    // Validate request body
     const parseResult = registerUserValidator.safeParse(req.body);
-    if (!parseResult.success) {
+    if (!parseResult.success)
       return res.status(400).json({ error: parseResult.error.issues });
-    }
 
     const { reg_no, password, role } = parseResult.data;
 
-    // Check if user already exists
     const existingUser = await getUserByRegNoService(reg_no);
     if (existingUser) {
-      return res.status(400).json({ error: "User with this registration number already exists" });
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    // Hash password (use reg_no if password not provided)
+    // Auto password = reg_no if password is missing
     const hashedPassword = bcrypt.hashSync(password || reg_no, 10);
 
-    // Register user; role will default to "voter" if not provided
     const newUser = await registerUserService(reg_no, hashedPassword, role);
 
     res.status(201).json({
-      message: "User registered successfully. Use reg_no + password to login.",
+      message: "User registered successfully",
       user: newUser,
     });
+
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to register user" });
+    res.status(500).json({ error: error.message });
   }
 };
 
 // -------------------------------
-// Login student
+// Login student (supports secret code and first-login secret code enforcement)
+// -------------------------------
+// -------------------------------
+// Login student (supports first login & secret code)
 // -------------------------------
 export const loginUser: RequestHandler = async (req, res) => {
   try {
@@ -58,50 +60,71 @@ export const loginUser: RequestHandler = async (req, res) => {
     if (!parseResult.success)
       return res.status(400).json({ error: parseResult.error.issues });
 
-    const { reg_no, password } = parseResult.data;
+    const { reg_no, password, secret_code } = parseResult.data;
 
-    const user = await loginUserService(reg_no, password);
-    if (!user) return res.status(401).json({ error: "Invalid registration number or password" });
+    const user = await loginUserService(reg_no, password, secret_code);
 
-    // Compare password
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Invalid registration number or password" });
+    // Create JWT token for client
+    const payload = {
+      reg_no: user.reg_no,
+      name: user.name,
+      id: user.id,
+      role: user.role,
+    };
 
-    // Generate JWT
-    const payload = { reg_no: user.reg_no, name: user.name, id: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "24h" });
 
-    res.status(200).json({ message: "Login successful", token, user: payload });
+    // Check if secret code is set
+    if (!user.has_secret_code) {
+      return res.status(200).json({
+        message: "First login detected. You must set a secret code.",
+        token,                // <-- JWT token included
+        user: payload,
+        requireSecretCode: true,
+      });
+    }
+
+    // Secret code exists, but client might not have provided it
+    if (user.has_secret_code && !secret_code) {
+      return res.status(200).json({
+        message: "Secret code required for login.",
+        token: null,
+        user: payload,
+        requireSecretCode: true,
+      });
+    }
+
+    // Secret code provided and valid, full login successful
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: payload,
+    });
+
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to login student" });
+    res.status(401).json({ error: error.message });
   }
 };
 
+
+
 // -------------------------------
-// Complete profile after first login
+// Set secret code (requires JWT)
 // -------------------------------
-export const completeProfile: RequestHandler = async (req, res) => {
+export const setSecretCode: RequestHandler = async (req, res) => {
   try {
-    const parseResult = completeProfileValidator.safeParse(req.body);
-    if (!parseResult.success)
-      return res.status(400).json({ error: parseResult.error.issues });
+    const { secret_code } = req.body;
+    if (!secret_code) {
+      return res.status(400).json({ error: "secret_code is required" });
+    }
 
-    const { reg_no } = req.params; // or from token
-    const { name, school, expected_graduation } = parseResult.data;
+    const reg_no = (req as any).user.reg_no; // comes from JWT middleware
 
-    const updatedUser = await completeStudentProfileService(
-      reg_no,
-      name,
-      school,
-      expected_graduation,
-    );
+    const msg = await createSecretCodeService(reg_no, secret_code);
 
-    res.status(200).json({
-      message: "Profile updated successfully",
-      user: updatedUser,
-    });
+    res.status(200).json({ message: msg });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to update profile" });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -109,19 +132,67 @@ export const completeProfile: RequestHandler = async (req, res) => {
 // Update password
 // -------------------------------
 export const updatePassword: RequestHandler = async (req, res) => {
+  const parseResult = updatePasswordValidator.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: parseResult.error.issues });
+
+  const reg_no = req.query.reg_no as string;
+  if (!reg_no) return res.status(400).json({ error: "reg_no is required" });
+
+  const { password } = parseResult.data;
+
+  // DON'T hash here, service handles it
+  const message = await updateUserPasswordService(reg_no, password);
+
+  res.status(200).json({ message });
+};
+
+
+// -------------------------------
+// Complete profile
+// -------------------------------
+export const completeProfile: RequestHandler = async (req, res) => {
   try {
-    const parseResult = updatePasswordValidator.safeParse(req.body);
+    const parseResult = completeProfileValidator.safeParse(req.body);
     if (!parseResult.success)
       return res.status(400).json({ error: parseResult.error.issues });
 
-    const { reg_no } = req.params; // or from token
-    const { password } = parseResult.data;
+    const reg_no = req.query.reg_no as string;
+    if (!reg_no) return res.status(400).json({ error: "reg_no is required" });
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const message = await updateUserPasswordService(reg_no, hashedPassword);
+    const { name, school, expected_graduation, email } = parseResult.data;
 
-    res.status(200).json({ message });
+    const updatedUser = await completeStudentProfileService(
+      reg_no,
+      name,
+      school,
+      expected_graduation,
+      email
+    );
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to update password" });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// -------------------------------
+// Get user by registration number
+// -------------------------------
+export const getUserByRegNo: RequestHandler = async (req, res) => {
+  try {
+    const reg_no = req.query.reg_no as string;
+    if (!reg_no) return res.status(400).json({ error: "reg_no is required" });
+
+    const user = await getUserByRegNoService(reg_no);
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json({ user });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };
