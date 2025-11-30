@@ -59,6 +59,7 @@ export const users = pgTable("users", {
   graduation_status: graduationStatus("graduation_status").default("active"),
   school: School("school"),
 
+  profile_complete: boolean("profile_complete").notNull().default(false), // <-- new column
   // Security fields
   secret_code_hash: varchar("secret_code_hash", { length: 255 }),
   has_secret_code: boolean("has_secret_code").notNull().default(false),

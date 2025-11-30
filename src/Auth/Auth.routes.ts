@@ -5,7 +5,7 @@ import {
   completeProfile,
   updatePassword,
   setSecretCode,
-  getUserByRegNo, // new route
+  getUserByRegNo,
 } from "./Auth.controller";
 import { anyAuthenticatedUser } from "../middlewares/bearAuth";
 
@@ -14,23 +14,27 @@ const AuthRouter = Router();
 // -------------------------------
 // Public Routes
 // -------------------------------
-AuthRouter.post("/register", registerUser);        // Register new user
-AuthRouter.post("/login", loginUser);              // Login (supports secret code)
+
+// Register a new user
+AuthRouter.post("/register", registerUser);
+
+// Login (supports first login & secret code / profile completion checks)
+AuthRouter.post("/login", loginUser);
 
 // -------------------------------
-// Protected Routes
+// Protected Routes (require JWT auth)
 // -------------------------------
 
-// Update password using query string: ?reg_no=SC/COM/0008/22
+// Update password: ?reg_no=SC/COM/0008/22
 AuthRouter.put("/update-password", anyAuthenticatedUser, updatePassword);
 
-// Complete profile using query string: ?reg_no=SC/COM/0008/22
+// Complete profile: ?reg_no=SC/COM/0008/22
 AuthRouter.put("/complete-profile", anyAuthenticatedUser, completeProfile);
 
-// Set secret code (requires JWT)
+// Set secret code (first login only)
 AuthRouter.put("/set-secret-code", anyAuthenticatedUser, setSecretCode);
 
-// Get user by registration number using query string: ?reg_no=SC/COM/0008/22
+// Get user by registration number: ?reg_no=SC/COM/0008/22
 AuthRouter.get("/user/by-reg-no", anyAuthenticatedUser, getUserByRegNo);
 
 export default AuthRouter;

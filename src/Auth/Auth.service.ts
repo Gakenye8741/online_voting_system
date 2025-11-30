@@ -4,7 +4,7 @@ import { userRole, users, UserSelect } from "../drizzle/schema";
 import bcrypt from "bcrypt";
 
 // ================================
-// Register a new student (minimal)
+// Register a new student
 // ================================
 export const registerUserService = async (
   reg_no: string,
@@ -21,8 +21,10 @@ export const registerUserService = async (
       graduation_status: "active",
       has_secret_code: false,
       has_face_verification: false,
+      profile_complete: false, // incomplete by default
       name: reg_no,
       expected_graduation: "01/2099",
+      school: null,           // null until profile completion
     })
     .returning();
 
@@ -32,7 +34,7 @@ export const registerUserService = async (
 };
 
 // ================================
-// Login service (first-login allows secret code creation)
+// Login service
 // ================================
 export const loginUserService = async (
   reg_no: string,
@@ -44,14 +46,36 @@ export const loginUserService = async (
 
   if (!user) throw new Error("User not found");
 
-  // Check password
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid password");
 
-  // If secret code exists, enforce it later when voting (not here)
-  // First login: allow without secret code
+  return user; // return DB record directly
+};
 
-  return user;
+// ================================
+// Complete profile
+// ================================
+export const completeStudentProfileService = async (
+  reg_no: string,
+  name: string,
+  school: "Science" | "Education" | "Business" | "Humanities and Developmental_Studies" | "TVET",
+  expected_graduation: string,
+  email: string
+): Promise<UserSelect> => {
+  const [updatedUser] = await db.update(users)
+    .set({
+      name,
+      school,
+      expected_graduation,
+      email,
+      profile_complete: true,
+    })
+    .where(eq(users.reg_no, reg_no))
+    .returning();
+
+  if (!updatedUser) throw new Error("Failed to update profile");
+
+  return updatedUser;
 };
 
 // ================================
@@ -77,32 +101,7 @@ export const createSecretCodeService = async (
 };
 
 // ================================
-// Complete profile
-// ================================
-export const completeStudentProfileService = async (
-  reg_no: string,
-  name: string,
-  school: "Science" | "Education" | "Business" | "Humanities and Developmental_Studies" | "TVET",
-  expected_graduation: string,
-  email: string
-): Promise<UserSelect> => {
-  const [updatedUser] = await db.update(users)
-    .set({
-      name,
-      school,
-      expected_graduation,
-      email,
-    })
-    .where(eq(users.reg_no, reg_no))
-    .returning();
-
-  if (!updatedUser) throw new Error("Failed to update profile");
-
-  return updatedUser;
-};
-
-// ================================
-// Get user by reg no
+// Get user by registration number
 // ================================
 export const getUserByRegNoService = async (
   reg_no: string
