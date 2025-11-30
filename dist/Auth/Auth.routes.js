@@ -7,17 +7,19 @@ const AuthRouter = (0, express_1.Router)();
 // -------------------------------
 // Public Routes
 // -------------------------------
-AuthRouter.post("/register", Auth_controller_1.registerUser); // Register new user
-AuthRouter.post("/login", Auth_controller_1.loginUser); // Login (supports secret code)
+// Register a new user
+AuthRouter.post("/register", Auth_controller_1.registerUser);
+// Login (supports first login & secret code / profile completion checks)
+AuthRouter.post("/login", Auth_controller_1.loginUser);
 // -------------------------------
-// Protected Routes
+// Protected Routes (require JWT auth)
 // -------------------------------
-// Update password using query string: ?reg_no=SC/COM/0008/22
+// Update password: ?reg_no=SC/COM/0008/22
 AuthRouter.put("/update-password", bearAuth_1.anyAuthenticatedUser, Auth_controller_1.updatePassword);
-// Complete profile using query string: ?reg_no=SC/COM/0008/22
+// Complete profile: ?reg_no=SC/COM/0008/22
 AuthRouter.put("/complete-profile", bearAuth_1.anyAuthenticatedUser, Auth_controller_1.completeProfile);
-// Set secret code (requires JWT)
+// Set secret code (first login only)
 AuthRouter.put("/set-secret-code", bearAuth_1.anyAuthenticatedUser, Auth_controller_1.setSecretCode);
-// Get user by registration number using query string: ?reg_no=SC/COM/0008/22
+// Get user by registration number: ?reg_no=SC/COM/0008/22
 AuthRouter.get("/user/by-reg-no", bearAuth_1.anyAuthenticatedUser, Auth_controller_1.getUserByRegNo);
 exports.default = AuthRouter;

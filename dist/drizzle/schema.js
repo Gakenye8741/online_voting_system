@@ -53,6 +53,7 @@ exports.users = (0, pg_core_1.pgTable)("users", {
     expected_graduation: (0, pg_core_1.varchar)("expected_graduation", { length: 7 }).notNull(), // MM/YYYY format
     graduation_status: (0, exports.graduationStatus)("graduation_status").default("active"),
     school: (0, exports.School)("school"),
+    profile_complete: (0, pg_core_1.boolean)("profile_complete").notNull().default(false), // <-- new column
     // Security fields
     secret_code_hash: (0, pg_core_1.varchar)("secret_code_hash", { length: 255 }),
     has_secret_code: (0, pg_core_1.boolean)("has_secret_code").notNull().default(false),
