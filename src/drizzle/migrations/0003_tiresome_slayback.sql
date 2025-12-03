@@ -1,0 +1,1 @@
+ALTER TABLE "candidate_applications" ADD COLUMN "school" "school" NOT NULL;

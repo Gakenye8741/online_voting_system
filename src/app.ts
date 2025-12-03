@@ -6,6 +6,8 @@ import "./utils/cron"
 import GraduationRouter from './services/graduation/graduation.routes';
 import UsersRouter from './services/users/users.routes';
 import ElectionRouter from './services/elections/elections.route';
+import PositionsRouter from './services/Positions/position.routes';
+import CandidateApplicationsRouter from './services/Applications/candidateApplications.route';
 
 dotenv.config();
 
@@ -23,11 +25,13 @@ app.get('/', (req, res:Response) => {
 });
 
 //import route
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.use('/api/auth/',AuthRouter);
 app.use('/api/graduation', GraduationRouter);
 app.use('/api/users/', UsersRouter);
 app.use('/api/elections/', ElectionRouter);
+app.use('/api/positions/', PositionsRouter);
+app.use('/api/candidate-applications', CandidateApplicationsRouter);
 
 
 // 404 handler

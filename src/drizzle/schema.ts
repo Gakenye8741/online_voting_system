@@ -11,7 +11,8 @@ export const userRole = pgEnum("user_role", ["voter", "admin" ,  "Dean_of_Scienc
   "Dean_of_Business",
   "Dean_of_Humanities_and_Developmental_Studies",
   "Dean_of_TVET",
-  "Dean_of_Students"]);
+  "Dean_of_Students",
+]);
 export const electionStatus = pgEnum("election_status", ["upcoming", "ongoing", "finished"]);
 export const positionTier = pgEnum("position_tier", ["school", "university"]);
 export const School = pgEnum("school", [
@@ -128,12 +129,16 @@ export const candidates = pgTable("candidates", {
 });
 
 // Candidate Applications Table (multi-stage approvals)
+// Candidate Applications Table (multi-stage approvals)
 export const candidate_applications = pgTable("candidate_applications", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   student_id: uuid("student_id").notNull().references(() => users.id),
   position_id: uuid("position_id").notNull().references(() => positions.id),
   manifesto: text("manifesto"),
   documents_url: text("documents_url"), // link to uploaded docs (could be json list)
+
+  // Student's school (used to assign correct Dean)
+  school: School("school").notNull(),
 
   // Stage approvals in the new order: School Dean -> Accounts -> Dean of Students
   school_dean_status: approvalStatus("school_dean_status").notNull().default("PENDING"),
@@ -155,6 +160,7 @@ export const candidate_applications = pgTable("candidate_applications", {
 }, (table) => ({
   uniqueApplication: uniqueIndex("unique_application_per_position").on(table.student_id, table.position_id),
 }));
+
 
 // Votes Table
 export const votes = pgTable("votes", {
