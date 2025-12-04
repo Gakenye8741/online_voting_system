@@ -25,7 +25,7 @@ const PositionsRouter = Router();
 PositionsRouter.post("/create", adminAuth, createPosition);
 
 // Get all positions
-PositionsRouter.get("/", adminAuth, getAllPositions);
+PositionsRouter.get("/", getAllPositions);
 
 // Get position by ID
 PositionsRouter.get("/by-id/:id", anyAuthenticatedUser, getPositionById);
