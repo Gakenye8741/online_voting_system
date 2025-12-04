@@ -8,6 +8,7 @@ import UsersRouter from './services/users/users.routes';
 import ElectionRouter from './services/elections/elections.route';
 import PositionsRouter from './services/Positions/position.routes';
 import CandidateApplicationsRouter from './services/Applications/candidateApplications.route';
+import CandidatesRouter from './services/candidates/candidates.routes';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/auth/',AuthRouter);
 app.use('/api/graduation', GraduationRouter);
 app.use('/api/users/', UsersRouter);
 app.use('/api/elections/', ElectionRouter);
+app.use('/api/candidates/', CandidatesRouter);
 app.use('/api/positions/', PositionsRouter);
 app.use('/api/candidate-applications', CandidateApplicationsRouter);
 

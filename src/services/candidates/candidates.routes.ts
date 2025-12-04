@@ -57,7 +57,7 @@ CandidatesRouter.get("/count-by-school", adminAuth, getCandidatesCountBySchool);
 CandidatesRouter.post("/create", adminAuth, createCandidate);
 
 // Update candidate
-CandidatesRouter.put("/update/:id", adminAuth, updateCandidate);
+CandidatesRouter.put("/update/:id", anyAuthenticatedUser, updateCandidate);
 
 // Delete candidate
 CandidatesRouter.delete("/delete/:id", adminAuth, deleteCandidate);

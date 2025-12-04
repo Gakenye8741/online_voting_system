@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// ---- Enums (based on your Drizzle schema) ----
-export const schoolEnum = z.enum([
+// Example School enum (replace with your actual definition)
+export const SchoolEnum = z.enum([
   "Science",
   "Education",
   "Business",
@@ -9,38 +9,23 @@ export const schoolEnum = z.enum([
   "TVET",
 ]);
 
-// ---- Candidate Validator ----
-export const candidateValidator = z.object({
-  position_id: z
-    .string()
-    .uuid("position_id must be a valid UUID"),
-
-  name: z
-    .string()
-    .min(3, "Candidate name must be at least 3 characters")
-    .max(255),
-
-  photo_url: z
-    .string()
-    .url("photo_url must be a valid URL")
-    .optional()
-    .nullable(),
-
-  bio: z
-    .string()
-    .optional()
-    .nullable(),
-
-  coalition_id: z
-    .string()
-    .uuid("coalition_id must be a valid UUID")
-    .optional()
-    .nullable(),
-
-  school: schoolEnum,
+export const createCandidateSchema = z.object({
+  position_id: z.string().uuid({
+    message: "Position ID must be a valid UUID",
+  }),
+  name: z.string()
+    .min(1, { message: "Name is required" })
+    .max(255, { message: "Name must be at most 255 characters" }),
+  photo_url: z.string()
+    .url({ message: "Photo must be a valid URL" })
+    .max(255)
+    .optional(),
+  bio: z.string().optional(),
+  coalition_id: z.string()
+    .uuid({ message: "Coalition ID must be a valid UUID" })
+    .optional(),
+  school: SchoolEnum.optional(),
 });
 
-// ---- Validator for candidate ID ----
-export const candidateIdValidator = z.object({
-  id: z.string().uuid("id must be a valid UUID"),
-});
+// Example usage for update, you may allow partial updates
+export const updateCandidateSchema = createCandidateSchema.partial();
