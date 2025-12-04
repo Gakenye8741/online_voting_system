@@ -27,11 +27,16 @@ export const createCandidateApplicationService = async (
   const validation = validateCandidateApplication(applicationData);
   if (!validation.valid) throw new Error(JSON.stringify(validation.errors));
 
-  // Check for duplicate
+  // Ensure election_id is provided
+  if (!applicationData.election_id) {
+    throw new Error("Election ID is required for candidate application");
+  }
+
+  // Check for duplicate for the same position + election
   const existing = await db.query.candidate_applications.findFirst({
     where: eq(candidate_applications.student_id, applicationData.student_id),
   });
-  if (existing) throw new Error("You have already applied for this position");
+  if (existing) throw new Error("You have already applied for this position in this election");
 
   const [newApplication] = await db.insert(candidate_applications)
     .values({
@@ -97,6 +102,7 @@ export const getPendingApplicationsForApproverService = async (
 /* ================================
    UPDATE – Approve/Reject Application
 ================================ */
+
 export const updateCandidateApplicationStatusService = async (
   applicationId: string,
   approverRole: "school_dean" | "accounts" | "dean_of_students",
@@ -145,6 +151,7 @@ export const updateCandidateApplicationStatusService = async (
     const student = await db.query.users.findFirst({ where: eq(users.id, updatedApp.student_id) });
     await db.insert(candidates).values({
       position_id: updatedApp.position_id,
+      election_id: updatedApp.election_id, // ✅ Add election_id here
       id: updatedApp.student_id,
       name: student?.name || "Unknown",
       bio: updatedApp.manifesto,

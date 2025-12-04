@@ -11,6 +11,7 @@ import {
   getCandidatesCountBySchoolService,
   updateCandidateService,
   deleteCandidateService,
+  getCandidatesByElectionService,
 } from "./candidates.service";
 
 import { CandidateInsert, CandidateSelect } from "../../drizzle/schema";
@@ -260,5 +261,29 @@ export const getCandidatesCountBySchool: RequestHandler = async (req, res) => {
     res.status(200).json({ count });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to fetch candidates count" });
+  }
+};
+
+/**
+ * Get all candidates for a specific election
+ * Route: GET /candidates/election/:electionId
+ */
+export const getCandidatesByElection: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { electionId } = req.params;
+
+    if (!electionId) {
+      return res.status(400).json({ error: "Election ID is required" });
+    }
+
+    const candidates: CandidateSelect[] = await getCandidatesByElectionService(electionId);
+
+    if (candidates.length > 0) {
+      res.status(200).json({ candidates });
+    } else {
+      res.status(404).json({ message: "No candidates found for this election" });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to fetch candidates for election" });
   }
 };

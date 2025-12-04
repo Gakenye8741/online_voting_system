@@ -12,6 +12,7 @@ export const userRole = pgEnum("user_role", ["voter", "admin" ,  "Dean_of_Scienc
   "Dean_of_Humanities_and_Developmental_Studies",
   "Dean_of_TVET",
   "Dean_of_Students",
+  "Accountants"
 ]);
 export const electionStatus = pgEnum("election_status", ["upcoming", "ongoing", "finished"]);
 export const positionTier = pgEnum("position_tier", ["school", "university"]);
@@ -86,6 +87,8 @@ export const elections = pgTable("elections", {
   end_date: timestamp("end_date").notNull(),
   created_by: uuid("created_by").notNull().references(() => users.id),
   status: electionStatus("status").default("upcoming"),
+  createdAt: timestamp("createdAt").defaultNow(),
+   updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Election Settings Table
@@ -106,7 +109,7 @@ export const coalitions = pgTable("coalitions", {
 // Positions Table
 export const positions = pgTable("positions", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
-  election_id: uuid("election_id").notNull().references(() => elections.id),
+  election_id: uuid("election_id").notNull().references(() => elections.id), // LINK TO ELECTION
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   school: School("school"),
@@ -121,6 +124,7 @@ export const positions = pgTable("positions", {
 export const candidates = pgTable("candidates", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   position_id: uuid("position_id").notNull().references(() => positions.id),
+  election_id: uuid("election_id").notNull().references(() => elections.id), // NEW: Link candidate to election
   name: varchar("name", { length: 255 }).notNull(),
   photo_url: varchar("photo_url", { length: 255 }),
   bio: text("bio"),
@@ -129,11 +133,11 @@ export const candidates = pgTable("candidates", {
 });
 
 // Candidate Applications Table (multi-stage approvals)
-// Candidate Applications Table (multi-stage approvals)
 export const candidate_applications = pgTable("candidate_applications", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   student_id: uuid("student_id").notNull().references(() => users.id),
   position_id: uuid("position_id").notNull().references(() => positions.id),
+  election_id: uuid("election_id").notNull().references(() => elections.id), // NEW: Link application to election
   manifesto: text("manifesto"),
   documents_url: text("documents_url"), // link to uploaded docs (could be json list)
 
@@ -158,8 +162,10 @@ export const candidate_applications = pgTable("candidate_applications", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  uniqueApplication: uniqueIndex("unique_application_per_position").on(table.student_id, table.position_id),
+  uniqueApplication: uniqueIndex("unique_application_per_position_per_election")
+    .on(table.student_id, table.position_id, table.election_id), // UNIQUE PER ELECTION + POSITION
 }));
+
 
 
 // Votes Table

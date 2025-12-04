@@ -1,1 +1,0 @@
-ALTER TABLE "candidate_applications" DROP COLUMN "school";

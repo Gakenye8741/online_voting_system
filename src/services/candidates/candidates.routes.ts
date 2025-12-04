@@ -11,7 +11,9 @@ import {
   deleteCandidate,
   getCandidatesCount,
   getCandidatesCountBySchool,
+  getCandidatesByElection,
 } from "./candidates.controller";
+
 
 import { adminAuth, anyAuthenticatedUser } from "../../middlewares/bearAuth";
 
@@ -38,6 +40,9 @@ CandidatesRouter.get("/by-position", anyAuthenticatedUser, getCandidatesByPositi
 
 // Get candidates by coalition (?coalition_id=xxxx)
 CandidatesRouter.get("/by-coalition", anyAuthenticatedUser, getCandidatesByCoalition);
+
+// Get candidates by election (/:electionId)
+CandidatesRouter.get("/by-election/:electionId", anyAuthenticatedUser, getCandidatesByElection);
 
 // --------------------------------
 // Counts

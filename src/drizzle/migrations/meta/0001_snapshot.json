@@ -1,6 +1,6 @@
 {
-  "id": "1b11d9e5-2533-4e91-86d4-50c26aeca3a7",
-  "prevId": "8b847e0f-b752-46a4-80da-19a0200082ee",
+  "id": "b865d150-3abd-403f-9ab1-7cb69de36a10",
+  "prevId": "4bd1c525-30a7-4778-b622-67a80d665fd6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -189,6 +189,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "election_id": {
+          "name": "election_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "manifesto": {
           "name": "manifesto",
           "type": "text",
@@ -200,6 +206,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "school": {
+          "name": "school",
+          "type": "school",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
         },
         "school_dean_status": {
           "name": "school_dean_status",
@@ -285,8 +298,8 @@
         }
       },
       "indexes": {
-        "unique_application_per_position": {
-          "name": "unique_application_per_position",
+        "unique_application_per_position_per_election": {
+          "name": "unique_application_per_position_per_election",
           "columns": [
             {
               "expression": "student_id",
@@ -296,6 +309,12 @@
             },
             {
               "expression": "position_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "election_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -327,6 +346,19 @@
           "tableTo": "positions",
           "columnsFrom": [
             "position_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "candidate_applications_election_id_elections_id_fk": {
+          "name": "candidate_applications_election_id_elections_id_fk",
+          "tableFrom": "candidate_applications",
+          "tableTo": "elections",
+          "columnsFrom": [
+            "election_id"
           ],
           "columnsTo": [
             "id"
@@ -397,6 +429,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "election_id": {
+          "name": "election_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "varchar(255)",
@@ -437,6 +475,19 @@
           "tableTo": "positions",
           "columnsFrom": [
             "position_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "candidates_election_id_elections_id_fk": {
+          "name": "candidates_election_id_elections_id_fk",
+          "tableFrom": "candidates",
+          "tableTo": "elections",
+          "columnsFrom": [
+            "election_id"
           ],
           "columnsTo": [
             "id"
@@ -825,6 +876,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "profile_complete": {
+          "name": "profile_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "secret_code_hash": {
           "name": "secret_code_hash",
           "type": "varchar(255)",
@@ -1065,7 +1123,8 @@
         "Dean_of_Business",
         "Dean_of_Humanities_and_Developmental_Studies",
         "Dean_of_TVET",
-        "Dean_of_Students"
+        "Dean_of_Students",
+        "Accountants"
       ]
     }
   },

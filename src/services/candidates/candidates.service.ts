@@ -132,3 +132,15 @@ export const deleteCandidateService = async (id: string): Promise<string> => {
   await db.delete(candidates).where(eq(candidates.id, id));
   return "Candidate deleted successfully";
 };
+
+/**
+ * Get all candidates in a specific election
+ */
+export const getCandidatesByElectionService = async (
+  electionId: string
+): Promise<CandidateSelect[]> => {
+  return db.query.candidates.findMany({
+    where: sql`${candidates.position_id} IN (SELECT id FROM positions WHERE election_id = ${electionId})`,
+    orderBy: [desc(candidates.name)],
+  });
+};

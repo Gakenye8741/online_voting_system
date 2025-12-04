@@ -11,11 +11,29 @@ import {
 
 /* ================================
    CREATE – Submit Candidate Application
+   Now requires election_id in the request body
 ================================ */
 export const createCandidateApplicationController = async (req: Request, res: Response) => {
   try {
-    const application = await createCandidateApplicationService(req.body);
-    res.status(201).json(application);
+    const { student_id, position_id, manifesto, documents_url, school, election_id } = req.body;
+
+    if (!election_id) {
+      return res.status(400).json({ error: "Election ID is required" });
+    }
+
+    const application = await createCandidateApplicationService({
+      student_id,
+      position_id,
+      manifesto,
+      documents_url,
+      school,
+      election_id, // ✅ include election_id
+    });
+
+    res.status(201).json({
+      message: "Candidate application created successfully",
+      application,
+    });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
@@ -73,6 +91,7 @@ export const getPendingApplicationsForApproverController = async (req: Request, 
 
 /* ================================
    UPDATE – Approve/Reject Application
+   Automatically creates candidate with election_id after approval
 ================================ */
 export const updateCandidateApplicationStatusController = async (req: Request, res: Response) => {
   try {
@@ -88,7 +107,11 @@ export const updateCandidateApplicationStatusController = async (req: Request, r
     );
 
     if (!updatedApplication) return res.status(404).json({ error: "Application not found" });
-    res.status(200).json(updatedApplication);
+
+    res.status(200).json({
+      message: "Application updated successfully",
+      application: updatedApplication,
+    });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

@@ -5,50 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1763526852385,
-      "tag": "0000_little_warbound",
+      "when": 1764843163702,
+      "tag": "0000_robust_wrecker",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1763548369000,
-      "tag": "0001_slimy_dakota_north",
+      "when": 1764843917741,
+      "tag": "0001_exotic_wendell_rand",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1764335119089,
-      "tag": "0002_needy_firebrand",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1764682855804,
-      "tag": "0003_tiresome_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1764685698945,
-      "tag": "0004_natural_sasquatch",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1764687277372,
-      "tag": "0005_tiny_unicorn",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1764690805428,
-      "tag": "0006_true_gravity",
+      "when": 1764848416148,
+      "tag": "0002_aromatic_barracuda",
       "breakpoints": true
     }
   ]

@@ -14,6 +14,7 @@ export const allowedRoles = [
   "Dean_of_Humanities_and_Developmental_Studies",
   "Dean_of_TVET",
   "Dean_of_Students",
+  "Accountants"
 ] as const;
 
 export const registerUserValidator = z.object({
