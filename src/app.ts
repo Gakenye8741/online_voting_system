@@ -9,6 +9,7 @@ import ElectionRouter from './services/elections/elections.route';
 import PositionsRouter from './services/Positions/position.routes';
 import CandidateApplicationsRouter from './services/Applications/candidateApplications.route';
 import CandidatesRouter from './services/candidates/candidates.routes';
+import NotificationsRouter from './services/Notifications/Notification.route';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api/elections/', ElectionRouter);
 app.use('/api/candidates/', CandidatesRouter);
 app.use('/api/positions/', PositionsRouter);
 app.use('/api/candidate-applications', CandidateApplicationsRouter);
+app.use('/api/notifications', NotificationsRouter);
 
 
 // 404 handler

@@ -24,7 +24,6 @@ export const School = pgEnum("school", [
   "TVET"
 ]);
 
-// Deans Enum (5 School Deans + Dean of Students)
 export const DeanRole = pgEnum("dean_role", [
   "Dean_of_Science",
   "Dean_of_Education",
@@ -34,16 +33,23 @@ export const DeanRole = pgEnum("dean_role", [
   "Dean_of_Students"
 ]);
 
-// Graduation Status Enum
 export const graduationStatus = pgEnum("graduation_status", [
-  "active",      // currently enrolled, eligible to vote
-  "graduated",   // finished school
-  "deferred",    // postponed graduation
-  "inactive"     // dropped out / expelled
+  "active",
+  "graduated",
+  "deferred",
+  "inactive"
 ]);
 
-// Approval status for candidate applications
 export const approvalStatus = pgEnum("approval_status", ["PENDING", "APPROVED", "REJECTED"]);
+
+/* 🔔 Notification Type Enum */
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "SYSTEM",
+  "ANNOUNCEMENT",
+  "ELECTION",
+  "REMINDER",
+  "WARNING",
+]);
 
 /* ===============================
    2️⃣ TABLES
@@ -57,15 +63,14 @@ export const users = pgTable("users", {
   reg_no: varchar("reg_no", { length: 20 }).notNull(),
   password: varchar("password", { length: 255 }).notNull(),
   role: userRole("role").notNull().default("voter"),
-  expected_graduation: varchar("expected_graduation", { length: 7 }).notNull(), // MM/YYYY format
+  expected_graduation: varchar("expected_graduation", { length: 7 }).notNull(),
   graduation_status: graduationStatus("graduation_status").default("active"),
   school: School("school"),
 
-  profile_complete: boolean("profile_complete").notNull().default(false), // <-- new column
-  // Security fields
+  profile_complete: boolean("profile_complete").notNull().default(false),
   secret_code_hash: varchar("secret_code_hash", { length: 255 }),
   has_secret_code: boolean("has_secret_code").notNull().default(false),
-  face_embedding: text("face_embedding"), // store encrypted/serialized embedding (e.g. base64 or JSON string)
+  face_embedding: text("face_embedding"),
   has_face_verification: boolean("has_face_verification").notNull().default(false),
   created_at: timestamp("created_at").defaultNow(),
 });
@@ -88,7 +93,7 @@ export const elections = pgTable("elections", {
   created_by: uuid("created_by").notNull().references(() => users.id),
   status: electionStatus("status").default("upcoming"),
   createdAt: timestamp("createdAt").defaultNow(),
-   updatedAt: timestamp("updatedAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Election Settings Table
@@ -109,14 +114,13 @@ export const coalitions = pgTable("coalitions", {
 // Positions Table
 export const positions = pgTable("positions", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
-  election_id: uuid("election_id").notNull().references(() => elections.id), // LINK TO ELECTION
+  election_id: uuid("election_id").notNull().references(() => elections.id),
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   school: School("school"),
   tier: positionTier("tier").notNull(),
   coalition_id: uuid("coalition_id").references(() => coalitions.id),
 }, (table) => ({
-  // Ensure school-level positions cannot belong to a coalition
   coalitionConstraint: sql`CHECK (tier != 'school' OR coalition_id IS NULL)`
 }));
 
@@ -124,7 +128,7 @@ export const positions = pgTable("positions", {
 export const candidates = pgTable("candidates", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   position_id: uuid("position_id").notNull().references(() => positions.id),
-  election_id: uuid("election_id").notNull().references(() => elections.id), // NEW: Link candidate to election
+  election_id: uuid("election_id").notNull().references(() => elections.id),
   name: varchar("name", { length: 255 }).notNull(),
   photo_url: varchar("photo_url", { length: 255 }),
   bio: text("bio"),
@@ -132,19 +136,16 @@ export const candidates = pgTable("candidates", {
   school: School("school"),
 });
 
-// Candidate Applications Table (multi-stage approvals)
+// Candidate Applications Table
 export const candidate_applications = pgTable("candidate_applications", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   student_id: uuid("student_id").notNull().references(() => users.id),
   position_id: uuid("position_id").notNull().references(() => positions.id),
-  election_id: uuid("election_id").notNull().references(() => elections.id), // NEW: Link application to election
+  election_id: uuid("election_id").notNull().references(() => elections.id),
   manifesto: text("manifesto"),
-  documents_url: text("documents_url"), // link to uploaded docs (could be json list)
-
-  // Student's school (used to assign correct Dean)
+  documents_url: text("documents_url"),
   school: School("school").notNull(),
 
-  // Stage approvals in the new order: School Dean -> Accounts -> Dean of Students
   school_dean_status: approvalStatus("school_dean_status").notNull().default("PENDING"),
   school_dean_id: uuid("school_dean_id").references(() => users.id),
   school_dean_comment: text("school_dean_comment"),
@@ -163,10 +164,8 @@ export const candidate_applications = pgTable("candidate_applications", {
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   uniqueApplication: uniqueIndex("unique_application_per_position_per_election")
-    .on(table.student_id, table.position_id, table.election_id), // UNIQUE PER ELECTION + POSITION
+    .on(table.student_id, table.position_id, table.election_id),
 }));
-
-
 
 // Votes Table
 export const votes = pgTable("votes", {
@@ -180,7 +179,7 @@ export const votes = pgTable("votes", {
   uniqueVote: uniqueIndex("unique_vote_per_position").on(table.voter_id, table.position_id),
 }));
 
-// Blockchain Table (index -> integer)
+// Blockchain Table
 export const blockchain = pgTable("blockchain", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   index: integer("index").notNull(),
@@ -201,6 +200,29 @@ export const audit_logs = pgTable("audit_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
+
+/* ===============================
+   🔔 NEW — Notifications Table
+=============================== */
+export const notifications = pgTable("notifications", {
+  id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+
+  type: notificationTypeEnum("type").default("SYSTEM").notNull(),
+
+  sender_id: uuid("sender_id").references(() => users.id, { onDelete: "set null" }),
+  user_id: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+
+  election_id: uuid("election_id").references(() => elections.id, { onDelete: "set null" }),
+
+  is_read: boolean("is_read").default(false).notNull(),
+
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+
 /* ===============================
    3️⃣ RELATIONSHIPS
 =============================== */
@@ -216,6 +238,7 @@ export const relations = {
     settings: () => election_settings.election_id,
     positions: () => positions.election_id,
     votes: () => votes.election_id,
+    candidates: () => candidates.election_id,
   },
   positions: {
     candidates: () => candidates.position_id,
@@ -251,8 +274,13 @@ export const relations = {
   candidate_applications: {
     student: () => users.id,
     position: () => positions.id,
+  },
+  notifications: {
+    user: () => users.id,
+    election: () => elections.id,
   }
 };
+
 
 /* ===============================
    4️⃣ TYPE INFERENCES
@@ -289,3 +317,7 @@ export type BlockInsert = typeof blockchain.$inferInsert;
 
 export type AuditLogSelect = typeof audit_logs.$inferSelect;
 export type AuditLogInsert = typeof audit_logs.$inferInsert;
+
+/* 🔔 Notification Types */
+export type NotificationSelect = typeof notifications.$inferSelect;
+export type NotificationInsert = typeof notifications.$inferInsert;
