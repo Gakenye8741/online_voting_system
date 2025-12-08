@@ -25,14 +25,16 @@ export const createNotificationController = async (req: Request, res: Response) 
   try {
     const parsedData = createNotificationSchema.parse(req.body);
 
-    // Normalize optional values
     const notification = {
-      ...parsedData,
-      user_id: parsedData.user_id ?? "", // empty string for broadcasts
+      title: parsedData.title,
+      message: parsedData.message,
+      type: parsedData.type ?? "SYSTEM",
+      user_id: parsedData.user_id ?? null, // null = broadcast
       election_id: parsedData.election_id ?? null,
       candidate_id: parsedData.candidate_id ?? null,
       position_id: parsedData.position_id ?? null,
       is_read: parsedData.is_read ?? false,
+      sender_id: null,
     };
 
     const created = await createNotificationService(notification);
@@ -93,7 +95,7 @@ export const getAllNotificationsController = async (req: Request, res: Response)
 };
 
 /**
- * Get notifications for a SPECIFIC user
+ * Get notifications for a SPECIFIC user (including broadcasts)
  */
 export const getNotificationsForUserController = async (req: Request, res: Response) => {
   try {
@@ -111,7 +113,7 @@ export const getNotificationsForUserController = async (req: Request, res: Respo
 export const markNotificationAsReadController = async (req: Request, res: Response) => {
   try {
     const { id } = uuidParamSchema.parse(req.params);
-    updateNotificationSchema.parse(req.body); // only validating input
+    updateNotificationSchema.parse(req.body); // validate input
 
     const message = await markNotificationAsReadService(id);
     res.status(200).json({ message });

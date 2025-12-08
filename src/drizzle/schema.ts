@@ -206,21 +206,16 @@ export const audit_logs = pgTable("audit_logs", {
 =============================== */
 export const notifications = pgTable("notifications", {
   id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
-
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
-
   type: notificationTypeEnum("type").default("SYSTEM").notNull(),
-
   sender_id: uuid("sender_id").references(() => users.id, { onDelete: "set null" }),
-  user_id: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-
+  user_id: uuid("user_id").references(() => users.id, { onDelete: "cascade" }), // nullable now
   election_id: uuid("election_id").references(() => elections.id, { onDelete: "set null" }),
-
   is_read: boolean("is_read").default(false).notNull(),
-
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
+
 
 
 /* ===============================

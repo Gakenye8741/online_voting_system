@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import {
   createNotificationController,
   sendBulkNotificationsController,
@@ -16,59 +15,39 @@ import { adminAuth, anyAuthenticatedUser } from "../../middlewares/bearAuth";
 
 const NotificationsRouter = Router();
 
-/* ----------------------------------
-   Admin Create / Broadcast
------------------------------------ */
+// -------------------------------
+// Admin Routes
+// -------------------------------
 
-// Create a single notification (admin)
+// Create a new notification (single user or broadcast)
 NotificationsRouter.post("/create", adminAuth, createNotificationController);
 
-// Send notification to MANY users
+// Send notification to multiple users
 NotificationsRouter.post("/bulk", adminAuth, sendBulkNotificationsController);
 
-// Send notification to ALL users
+// Broadcast notification to all users
 NotificationsRouter.post("/broadcast", adminAuth, sendNotificationToAllUsersController);
 
-/* ----------------------------------
-   Admin Read
------------------------------------ */
-
-// Get ALL notifications (admin)
+// Get all notifications (Admin)
 NotificationsRouter.get("/", adminAuth, getAllNotificationsController);
 
-/* ----------------------------------
-   User Read
------------------------------------ */
-
-// Get notifications for a specific user
-NotificationsRouter.get("/user/:userId", anyAuthenticatedUser, getNotificationsForUserController);
-
-/* ----------------------------------
-   Mark as Read
------------------------------------ */
-
-// Mark ONE notification as read
-NotificationsRouter.put("/mark-read/:id", anyAuthenticatedUser, markNotificationAsReadController);
-
-// Mark ALL notifications as read (user)
-NotificationsRouter.put(
-  "/mark-all-read/:userId",
-  anyAuthenticatedUser,
-  markAllNotificationsAsReadController
-);
-
-/* ----------------------------------
-   Delete Notifications
------------------------------------ */
-
-// Delete a SINGLE notification
+// Delete a single notification (Admin)
 NotificationsRouter.delete("/delete/:id", adminAuth, deleteNotificationController);
 
-// Delete ALL notifications for a user
-NotificationsRouter.delete(
-  "/delete-all/:userId",
-  adminAuth,
-  deleteAllNotificationsForUserController
-);
+// Delete all notifications for a user (Admin)
+NotificationsRouter.delete("/delete-all/:userId", adminAuth, deleteAllNotificationsForUserController);
+
+// -------------------------------
+// User Routes
+// -------------------------------
+
+// Get notifications for a specific user (includes broadcasts)
+NotificationsRouter.get("/user/:userId", anyAuthenticatedUser, getNotificationsForUserController);
+
+// Mark a single notification as read
+NotificationsRouter.put("/mark-read/:id", anyAuthenticatedUser, markNotificationAsReadController);
+
+// Mark all notifications as read for a user
+NotificationsRouter.put("/mark-all-read/:userId", anyAuthenticatedUser, markAllNotificationsAsReadController);
 
 export default NotificationsRouter;

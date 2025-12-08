@@ -1,5 +1,5 @@
 import db from "../../drizzle/db";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, isNull, or } from "drizzle-orm";
 import {
   notifications,
   NotificationInsert,
@@ -64,14 +64,12 @@ export const getAllNotificationsService = async (): Promise<NotificationSelect[]
   });
 };
 
-/**
- * Get notifications for a specific user
- */
+// Get notifications for a specific user **including broadcasts**
 export const getNotificationsForUserService = async (
   userId: string
 ): Promise<NotificationSelect[]> => {
   return db.query.notifications.findMany({
-    where: eq(notifications.user_id, userId),
+    where: or(eq(notifications.user_id, userId), isNull(notifications.user_id)),
     orderBy: [desc(notifications.created_at)],
   });
 };
